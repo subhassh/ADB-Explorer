@@ -40,7 +40,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         => StyleHelper.FindDescendant<ItemsPresenter>(ExplorerGrid) is ItemsPresenter presenter ? presenter.ActualWidth : 0;
 
     public string SelectedFilesTotalSize => (SelectedFiles is not null && FileHelper.TotalSize(SelectedFiles) is long size and > 0) ? size.BytesToSize() : "";
-    public string SelectedFilesCount => $"{ExplorerGrid.SelectedItems.Count}";
+    public string SelectedFilesCount => $"{SelectedFiles?.Count() ?? 0}";
 
     private string prevPath = "";
 
@@ -824,6 +824,31 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         PasteGrid.Visibility = Visibility.Visible;
 
         SelectionTimer.Stop();
+    }
+
+    private void TreeSelectionButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (FileActions.IsAppDrive || DirList?.FileList is null || !DirList.FileList.Any())
+            return;
+
+        var dialog = new TreeSelectionWindow(DirList.FileList.ToList())
+        {
+            Owner = this
+        };
+
+        var result = dialog.ShowDialog();
+        if (result != true)
+            return;
+
+        SelectedFiles = dialog.SelectedFiles;
+        ExplorerGrid.UnselectAll();
+
+        OnPropertyChanged(nameof(SelectedFilesTotalSize));
+        OnPropertyChanged(nameof(SelectedFilesCount));
+
+        FileActions.SelectedItemsCount = SelectedFiles.Count();
+        FileActionLogic.UpdateFileActions();
+        MainToolBar.Items?.Refresh();
     }
 
     /// <summary>

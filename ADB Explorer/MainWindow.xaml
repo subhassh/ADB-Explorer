@@ -556,6 +556,12 @@
                             Margin="6,4,0,4"
                             Style="{StaticResource TotalSizeStyle}"
                             Text="{Binding ElementName=MainWin, Path=SelectedFilesTotalSize}" />
+                        <Button
+                            Margin="8,0,0,0"
+                            Padding="8,2"
+                            Click="TreeSelectionButton_Click"
+                            Content="Tree Select"
+                            ToolTip="Open tree view with tri-state checkbox selection" />
                     </StackPanel>
                 </StackPanel>
                 <StackPanel
