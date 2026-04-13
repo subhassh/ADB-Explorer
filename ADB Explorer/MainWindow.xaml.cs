@@ -840,8 +840,11 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         if (result != true)
             return;
 
-        SelectedFiles = dialog.SelectedFiles;
         ExplorerGrid.UnselectAll();
+        SelectionTimer.Stop();
+
+        SelectedFiles = dialog.SelectedFiles;
+        SelectedPackages = [];
 
         OnPropertyChanged(nameof(SelectedFilesTotalSize));
         OnPropertyChanged(nameof(SelectedFilesCount));
