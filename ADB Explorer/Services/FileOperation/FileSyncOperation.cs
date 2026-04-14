@@ -122,7 +122,8 @@ public class FileSyncOperation : FileOperation
 
             ParallelOptions options = new()
             {
-                MaxDegreeOfParallelism = Data.Settings.AllowMultiOp ? -1 : 1
+                // Tree-selection backup mode prioritizes correctness/stability over speed.
+                MaxDegreeOfParallelism = (Data.RuntimeSettings.IsTreeSelectionActive || !Data.Settings.AllowMultiOp) ? 1 : -1
             };
             bool useV2 = Device.AndroidVersion >= 11;
 

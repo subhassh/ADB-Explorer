@@ -1175,7 +1175,8 @@ internal static class FileActionLogic
                         if (!Directory.Exists(destinationRootFolder))
                             Directory.CreateDirectory(destinationRootFolder);
 
-                        target = new SyncFile(destinationBase, FileType.Folder) { PathType = FilePathType.Windows };
+                        // Important: pass the selected folder root so nested paths keep this folder level.
+                        target = new SyncFile(destinationRootFolder, FileType.Folder) { PathType = FilePathType.Windows };
                     }
                     else
                     {
