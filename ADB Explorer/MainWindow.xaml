@@ -80,8 +80,7 @@
                 <RowDefinition Height="Auto" />
                 <RowDefinition />
                 <RowDefinition Height="Auto" />
-                <RowDefinition Height="4" />
-                <RowDefinition Height="180" MinHeight="80" />
+                <RowDefinition Height="Auto" />
             </Grid.RowDefinitions>
             <Grid Margin="0,0,7,0">
                 <Grid.ColumnDefinitions>
@@ -139,6 +138,33 @@
                 MouseDown="GridBackgroundBlock_MouseDown"
                 Style="{StaticResource ExplorerViewBackgroundStyle}">
                 <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition />
+                        <ColumnDefinition>
+                            <ColumnDefinition.Style>
+                                <Style TargetType="ColumnDefinition">
+                                    <Setter Property="Width" Value="6" />
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding Source={x:Static models:Data.RuntimeSettings}, Path=IsLogOpen}" Value="False">
+                                            <Setter Property="Width" Value="0" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </ColumnDefinition.Style>
+                        </ColumnDefinition>
+                        <ColumnDefinition MinWidth="220">
+                            <ColumnDefinition.Style>
+                                <Style TargetType="ColumnDefinition">
+                                    <Setter Property="Width" Value="340" />
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding Source={x:Static models:Data.RuntimeSettings}, Path=IsLogOpen}" Value="False">
+                                            <Setter Property="Width" Value="0" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </ColumnDefinition.Style>
+                        </ColumnDefinition>
+                    </Grid.ColumnDefinitions>
                     <ScrollViewer Style="{StaticResource DriveViewScrollViewerStyle}">
                         <StackPanel>
                             <Expander
@@ -397,7 +423,26 @@
                             Cursor="SizeWE"
                             FocusVisualStyle="{x:Null}" />
                     </Grid>
-                    <Grid Style="{StaticResource LogGridStyle}">
+                    <GridSplitter
+                        Grid.Column="1"
+                        HorizontalAlignment="Stretch"
+                        VerticalAlignment="Stretch"
+                        ResizeDirection="Columns"
+                        ResizeBehavior="PreviousAndNext"
+                        Background="#666666"
+                        FocusVisualStyle="{x:Null}">
+                        <GridSplitter.Style>
+                            <Style TargetType="GridSplitter">
+                                <Setter Property="Visibility" Value="Visible" />
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding Source={x:Static models:Data.RuntimeSettings}, Path=IsLogOpen}" Value="False">
+                                        <Setter Property="Visibility" Value="Collapsed" />
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </GridSplitter.Style>
+                    </GridSplitter>
+                    <Grid Grid.Column="2" Style="{StaticResource LogGridStyle}">
                         <TextBox x:Name="LogTextBox" Style="{StaticResource LogTextBoxStyle}" />
                         <Menu
                             x:Name="LogControlsPanel"
@@ -591,35 +636,6 @@
                 </StackPanel>
             </Grid>
 
-            <GridSplitter
-                Grid.Row="4"
-                Height="4"
-                VerticalAlignment="Stretch"
-                HorizontalAlignment="Stretch"
-                ResizeDirection="Rows"
-                ResizeBehavior="CurrentAndNext"
-                Background="#666666" />
-
-            <Border Grid.Row="5" Margin="6,0,6,4" BorderThickness="1" BorderBrush="#DDDDDD" Background="#111111">
-                <Grid>
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto" />
-                        <RowDefinition />
-                    </Grid.RowDefinitions>
-                    <TextBlock Margin="8,4" Foreground="#E5E5E5" Text="ADB command log" />
-                    <TextBox
-                        Grid.Row="1"
-                        Margin="4"
-                        IsReadOnly="True"
-                        FontFamily="Consolas"
-                        FontSize="12"
-                        Text="{Binding ElementName=LogTextBox, Path=Text}"
-                        Foreground="#DDDDDD"
-                        Background="#111111"
-                        VerticalScrollBarVisibility="Auto"
-                        TextWrapping="Wrap" />
-                </Grid>
-            </Border>
         </Grid>
         <ui:SplitView
             x:Name="DevicesSplitView"
