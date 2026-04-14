@@ -815,6 +815,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     {
         SelectedFiles = FileActions.IsAppDrive ? [] : ExplorerGrid.SelectedItems.OfType<FileClass>();
         SelectedPackages = FileActions.IsAppDrive ? ExplorerGrid.SelectedItems.OfType<Package>() : [];
+        RuntimeSettings.IsTreeSelectionActive = false;
         OnPropertyChanged(nameof(SelectedFilesTotalSize));
         OnPropertyChanged(nameof(SelectedFilesCount));
         FileActions.SelectedItemsCount = FileActions.IsAppDrive ? SelectedPackages.Count() : SelectedFiles.Count();
@@ -845,6 +846,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
 
         SelectedFiles = dialog.SelectedFiles;
         SelectedPackages = [];
+        RuntimeSettings.IsTreeSelectionActive = true;
 
         OnPropertyChanged(nameof(SelectedFilesTotalSize));
         OnPropertyChanged(nameof(SelectedFilesCount));

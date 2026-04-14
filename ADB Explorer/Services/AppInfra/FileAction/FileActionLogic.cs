@@ -1134,10 +1134,11 @@ internal static class FileActionLogic
             }
         }
 
-        // Conflict checks are reliable for top-level selections, but not for nested tree selections.
-        // For nested selections, preserve all selected items and let transfer operations handle target paths.
-        var hasNestedSelection = pullItems.Any(f => !string.Equals(f.ParentPath, Data.CurrentPath, StringComparison.Ordinal));
-        if (!hasNestedSelection)
+        var preserveTreeFromSelection = Data.RuntimeSettings.IsTreeSelectionActive;
+
+        // Conflict checks are reliable for top-level selections.
+        // Skip them for tree-selection mode so nested paths stay intact.
+        if (!preserveTreeFromSelection)
         {
             var files = await CopyPasteService.MergeFiles(pullItems.Select(f => f.FullPath), path.ParsingName);
             if (files.Count() < pullItems.Count())
@@ -1148,44 +1149,49 @@ internal static class FileActionLogic
 
         await Task.Run(() =>
         {
-            App.Current.Dispatcher.Invoke(() => Data.FileOpQ.AddOperations(GeneratePullOps(path, pullItems, notify)));
+            App.Current.Dispatcher.Invoke(() => Data.FileOpQ.AddOperations(GeneratePullOps(path, pullItems, notify, preserveTreeFromSelection)));
         });
-        
-        static IEnumerable<FileSyncOperation> GeneratePullOps(ShellItem path, IEnumerable<FileClass> pullItems, bool notify)
+
+        static IEnumerable<FileSyncOperation> GeneratePullOps(ShellItem path, IEnumerable<FileClass> pullItems, bool notify, bool preserveTreeFromSelection)
         {
             foreach (var selected in pullItems)
             {
                 var item = selected.GetSyncFile();
-
-                // Preserve subtree path from current Android location into Windows target.
-                // Directories use destination base (operation appends selected folder name).
-                // Files use exact destination file path.
-                var relativeParent = string.Equals(selected.ParentPath, Data.CurrentPath, StringComparison.Ordinal)
-                    ? ""
-                    : FileHelper.ExtractRelativePath(selected.ParentPath, Data.CurrentPath);
-
-                var destinationBase = string.IsNullOrEmpty(relativeParent)
-                    ? path.ParsingName
-                    : FileHelper.ConcatPaths(path.ParsingName, relativeParent, '\\');
-
                 SyncFile target;
-                if (selected.IsDirectory)
-                {
-                    if (!Directory.Exists(destinationBase))
-                        Directory.CreateDirectory(destinationBase);
 
-                    target = new SyncFile(destinationBase, FileType.Folder) { PathType = FilePathType.Windows };
+                if (preserveTreeFromSelection)
+                {
+                    var relativeParent = string.Equals(selected.ParentPath, Data.CurrentPath, StringComparison.Ordinal)
+                        ? ""
+                        : FileHelper.ExtractRelativePath(selected.ParentPath, Data.CurrentPath);
+
+                    var destinationBase = string.IsNullOrEmpty(relativeParent)
+                        ? path.ParsingName
+                        : FileHelper.ConcatPaths(path.ParsingName, relativeParent, '\\');
+
+                    if (selected.IsDirectory)
+                    {
+                        var destinationRootFolder = FileHelper.ConcatPaths(destinationBase, selected.FullName, '\\');
+                        if (!Directory.Exists(destinationRootFolder))
+                            Directory.CreateDirectory(destinationRootFolder);
+
+                        target = new SyncFile(destinationBase, FileType.Folder) { PathType = FilePathType.Windows };
+                    }
+                    else
+                    {
+                        var relativeFile = FileHelper.ExtractRelativePath(selected.FullPath, Data.CurrentPath);
+                        var destinationFile = FileHelper.ConcatPaths(path.ParsingName, relativeFile, '\\');
+                        var destinationDir = Path.GetDirectoryName(destinationFile);
+
+                        if (!string.IsNullOrEmpty(destinationDir) && !Directory.Exists(destinationDir))
+                            Directory.CreateDirectory(destinationDir);
+
+                        target = new SyncFile(destinationFile, FileType.File) { PathType = FilePathType.Windows };
+                    }
                 }
                 else
                 {
-                    var relativeFile = FileHelper.ExtractRelativePath(selected.FullPath, Data.CurrentPath);
-                    var destinationFile = FileHelper.ConcatPaths(path.ParsingName, relativeFile, '\\');
-                    var destinationDir = Path.GetDirectoryName(destinationFile);
-
-                    if (!string.IsNullOrEmpty(destinationDir) && !Directory.Exists(destinationDir))
-                        Directory.CreateDirectory(destinationDir);
-
-                    target = new SyncFile(destinationFile, FileType.File) { PathType = FilePathType.Windows };
+                    target = SyncFile.MergeToWindowsPath(item, path);
                 }
 
                 var fileOp = FileSyncOperation.PullFile(item, target, Data.CurrentADBDevice, App.Current.Dispatcher);

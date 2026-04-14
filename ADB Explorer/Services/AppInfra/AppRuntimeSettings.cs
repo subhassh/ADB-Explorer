@@ -274,6 +274,13 @@ public class AppRuntimeSettings : ViewModelBase
         set => Set(ref isLogPaused, value);
     }
 
+    private bool isTreeSelectionActive = false;
+    public bool IsTreeSelectionActive
+    {
+        get => isTreeSelectionActive;
+        set => Set(ref isTreeSelectionActive, value);
+    }
+
     private bool isRootActive = false;
     public bool IsRootActive
     {
