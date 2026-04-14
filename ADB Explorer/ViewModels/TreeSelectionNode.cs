@@ -11,12 +11,11 @@ public class TreeSelectionNode : ViewModelBase
         get => isChecked;
         set
         {
-            // Prevent manual forcing of an indeterminate value from UI toggles.
-            // Indeterminate should reflect child state only.
+            // For user clicks in tri-state mode, WPF cycles true -> null -> false.
+            // We interpret manual null as an explicit toggle so users can deselect reliably.
             if (!isUpdatingChildren && value is null)
             {
-                UpdateFromChildren();
-                return;
+                value = isChecked == true ? false : true;
             }
 
             if (!Set(ref isChecked, value))

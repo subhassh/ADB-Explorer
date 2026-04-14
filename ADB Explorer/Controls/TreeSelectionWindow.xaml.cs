@@ -30,7 +30,7 @@ public partial class TreeSelectionWindow : Window
             }
 
             var root = new TreeSelectionNode(file);
-            var subtree = BuildDirectorySubtree(file);
+            var subtree = BuildDirectorySubtree(file, root);
             root.SetChildren(subtree);
             root.IsLoaded = true;
             roots.Add(root);
@@ -39,7 +39,7 @@ public partial class TreeSelectionWindow : Window
         SelectionTree.ItemsSource = roots;
     }
 
-    private static IEnumerable<TreeSelectionNode> BuildDirectorySubtree(FileClass root)
+    private static IEnumerable<TreeSelectionNode> BuildDirectorySubtree(FileClass root, TreeSelectionNode rootNode)
     {
         (string, long?, double?)[] tree;
         try
@@ -86,7 +86,7 @@ public partial class TreeSelectionWindow : Window
             return nodes;
         }
 
-        return BuildChildren(root.FullPath, null);
+        return BuildChildren(root.FullPath, rootNode);
     }
 
     private void Apply_Click(object sender, RoutedEventArgs e)
