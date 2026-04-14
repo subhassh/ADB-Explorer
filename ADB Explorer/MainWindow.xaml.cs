@@ -844,7 +844,9 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         ExplorerGrid.UnselectAll();
         SelectionTimer.Stop();
 
-        SelectedFiles = dialog.SelectedFiles;
+        SelectedFiles = dialog.SelectedFiles
+            .Where(f => f.Type is AbstractFile.FileType.File or AbstractFile.FileType.Folder)
+            .ToList();
         SelectedPackages = [];
         RuntimeSettings.IsTreeSelectionActive = true;
 
