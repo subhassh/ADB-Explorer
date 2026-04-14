@@ -589,6 +589,27 @@
                     <Menu Margin="6,0,-5,0" Style="{StaticResource LogToggleStyle}" />
                 </StackPanel>
             </Grid>
+
+            <Border Grid.Row="4" Margin="6,0,6,4" BorderThickness="1" BorderBrush="#DDDDDD" Background="#111111">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition />
+                    </Grid.RowDefinitions>
+                    <TextBlock Margin="8,4" Foreground="#E5E5E5" Text="ADB command log" />
+                    <TextBox
+                        Grid.Row="1"
+                        Margin="4"
+                        IsReadOnly="True"
+                        FontFamily="Consolas"
+                        FontSize="12"
+                        Text="{Binding ElementName=LogTextBox, Path=Text}"
+                        Foreground="#DDDDDD"
+                        Background="#111111"
+                        VerticalScrollBarVisibility="Auto"
+                        TextWrapping="Wrap" />
+                </Grid>
+            </Border>
         </Grid>
         <ui:SplitView
             x:Name="DevicesSplitView"

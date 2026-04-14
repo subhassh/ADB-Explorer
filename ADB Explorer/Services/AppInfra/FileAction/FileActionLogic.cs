@@ -1147,9 +1147,19 @@ internal static class FileActionLogic
         
         static IEnumerable<FileSyncOperation> GeneratePullOps(ShellItem path, IEnumerable<FileClass> pullItems, bool notify)
         {
-            foreach (var item in pullItems.Select(f => f.GetSyncFile()))
+            foreach (var selected in pullItems)
             {
-                var target = SyncFile.MergeToWindowsPath(item, path);
+                var item = selected.GetSyncFile();
+
+                // Preserve subtree path from current Android location into Windows target.
+                // Example: /storage/emulated/0/Documents/a.txt -> <target>/Documents/a.txt
+                var relative = FileHelper.ExtractRelativePath(selected.FullPath, Data.CurrentPath);
+                var targetPath = FileHelper.ConcatPaths(path.ParsingName, relative, '\\');
+
+                var target = new SyncFile(item);
+                target.UpdatePath(targetPath);
+                target.PathType = FilePathType.Windows;
+
                 var fileOp = FileSyncOperation.PullFile(item, target, Data.CurrentADBDevice, App.Current.Dispatcher);
 
                 if (notify)
