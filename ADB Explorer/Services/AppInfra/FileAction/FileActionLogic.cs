@@ -869,15 +869,38 @@ internal static class FileActionLogic
         Data.FileActions.IsSelectionIllegalOnWindows = Data.SelectedFiles.Any() && !FileHelper.FileNameLegal(Data.SelectedFiles, FileHelper.RenameTarget.Windows);
         Data.FileActions.IsSelectionIllegalOnFuse = Data.SelectedFiles.Any() && !FileHelper.FileNameLegal(Data.SelectedFiles, FileHelper.RenameTarget.FUSE);
         Data.FileActions.IsSelectionIllegalOnWinRoot = Data.SelectedFiles.Any() && !FileHelper.FileNameLegal(Data.SelectedFiles, FileHelper.RenameTarget.WinRoot);
-        Data.FileActions.IsSelectionConflictingOnFuse = Data.SelectedFiles.Select(f => f.FullName)
+        // Conflict checks must use full path context, not only file name.
+        // Different folders can legitimately contain same file names.
+        Data.FileActions.IsSelectionConflictingOnFuse = Data.SelectedFiles.Select(f => f.FullPath)
             .Distinct(StringComparer.InvariantCultureIgnoreCase)
             .Count() != Data.SelectedFiles.Count();
 
-        Data.FileActions.PullEnabled = !Data.FileActions.IsRecycleBin
-                                       && Data.SelectedFiles.AnyAll(f => f.Type is not FileType.BrokenLink)
-                                       && Data.FileActions.IsRegularItem
-                                       && !Data.FileActions.IsSelectionIllegalOnWindows
-                                       && !Data.FileActions.IsSelectionConflictingOnFuse;
+        bool pullBlockedRecycle = Data.FileActions.IsRecycleBin;
+        bool pullBlockedBrokenLink = !Data.SelectedFiles.AnyAll(f => f.Type is not FileType.BrokenLink);
+        bool pullBlockedType = !Data.FileActions.IsRegularItem;
+        bool pullBlockedIllegalWindows = Data.FileActions.IsSelectionIllegalOnWindows;
+        bool pullBlockedFuseConflict = Data.FileActions.IsSelectionConflictingOnFuse;
+
+        Data.FileActions.PullEnabled = !pullBlockedRecycle
+                                       && !pullBlockedBrokenLink
+                                       && !pullBlockedType
+                                       && !pullBlockedIllegalWindows
+                                       && !pullBlockedFuseConflict;
+
+        if (!Data.FileActions.PullEnabled)
+        {
+            Data.FileActions.PullDescription.Value = pullBlockedRecycle
+                ? "Pull is disabled in recycle bin"
+                : pullBlockedBrokenLink
+                    ? "Pull is disabled: selection contains a broken link"
+                    : pullBlockedType
+                        ? "Pull is disabled: selection contains unsupported item type"
+                        : pullBlockedIllegalWindows
+                            ? "Pull is disabled: one or more names are invalid on Windows"
+                            : pullBlockedFuseConflict
+                                ? "Pull is disabled: selected names conflict on case-insensitive Windows"
+                                : Data.FileActions.PullDescription.Value;
+        }
 
         Data.FileActions.ContextPushEnabled = !Data.FileActions.IsRecycleBin && !Data.FileActions.IsAppDrive && (!Data.SelectedFiles.Any() || (Data.SelectedFiles.Count() == 1 && Data.SelectedFiles.First().IsDirectory));
 
@@ -1134,22 +1157,67 @@ internal static class FileActionLogic
             }
         }
 
-        var files = await CopyPasteService.MergeFiles(pullItems.Select(f => f.FullPath), path.ParsingName);
-        if (files.Count() < pullItems.Count())
+        var preserveTreeFromSelection = Data.RuntimeSettings.IsTreeSelectionActive;
+
+        // Conflict checks are reliable for top-level selections.
+        // Skip them for tree-selection mode so nested paths stay intact.
+        if (!preserveTreeFromSelection)
         {
-            pullItems = pullItems.Where(f => files.Contains(f.FullPath));
+            var files = await CopyPasteService.MergeFiles(pullItems.Select(f => f.FullPath), path.ParsingName);
+            if (files.Count() < pullItems.Count())
+            {
+                pullItems = pullItems.Where(f => files.Contains(f.FullPath));
+            }
         }
 
         await Task.Run(() =>
         {
-            App.Current.Dispatcher.Invoke(() => Data.FileOpQ.AddOperations(GeneratePullOps(path, pullItems, notify)));
+            App.Current.Dispatcher.Invoke(() => Data.FileOpQ.AddOperations(GeneratePullOps(path, pullItems, notify, preserveTreeFromSelection)));
         });
-        
-        static IEnumerable<FileSyncOperation> GeneratePullOps(ShellItem path, IEnumerable<FileClass> pullItems, bool notify)
+
+        static IEnumerable<FileSyncOperation> GeneratePullOps(ShellItem path, IEnumerable<FileClass> pullItems, bool notify, bool preserveTreeFromSelection)
         {
-            foreach (var item in pullItems.Select(f => f.GetSyncFile()))
+            foreach (var selected in pullItems)
             {
-                var target = SyncFile.MergeToWindowsPath(item, path);
+                var item = selected.GetSyncFile();
+                SyncFile target;
+
+                if (preserveTreeFromSelection)
+                {
+                    var relativeParent = string.Equals(selected.ParentPath, Data.CurrentPath, StringComparison.Ordinal)
+                        ? ""
+                        : FileHelper.ExtractRelativePath(selected.ParentPath, Data.CurrentPath);
+
+                    var destinationBase = string.IsNullOrEmpty(relativeParent)
+                        ? path.ParsingName
+                        : FileHelper.ConcatPaths(path.ParsingName, relativeParent, '\\');
+
+                    if (selected.IsDirectory)
+                    {
+                        var destinationRootFolder = FileHelper.ConcatPaths(destinationBase, selected.FullName, '\\');
+                        if (!Directory.Exists(destinationRootFolder))
+                            Directory.CreateDirectory(destinationRootFolder);
+
+                        // Important: pass the selected folder root so nested paths keep this folder level.
+                        target = new SyncFile(destinationRootFolder, FileType.Folder) { PathType = FilePathType.Windows };
+                    }
+                    else
+                    {
+                        var relativeFile = FileHelper.ExtractRelativePath(selected.FullPath, Data.CurrentPath);
+                        var destinationFile = FileHelper.ConcatPaths(path.ParsingName, relativeFile, '\\');
+                        var destinationDir = Path.GetDirectoryName(destinationFile);
+
+                        if (!string.IsNullOrEmpty(destinationDir) && !Directory.Exists(destinationDir))
+                            Directory.CreateDirectory(destinationDir);
+
+                        target = new SyncFile(destinationFile, FileType.File) { PathType = FilePathType.Windows };
+                    }
+                }
+                else
+                {
+                    target = SyncFile.MergeToWindowsPath(item, path);
+                }
+
                 var fileOp = FileSyncOperation.PullFile(item, target, Data.CurrentADBDevice, App.Current.Dispatcher);
 
                 if (notify)

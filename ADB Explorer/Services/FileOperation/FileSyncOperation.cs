@@ -115,14 +115,15 @@ public class FileSyncOperation : FileOperation
                     var targetDirPath = FileHelper.ConcatPaths(TargetPath, FileHelper.ExtractRelativePath(dir.FullPath, FilePath.FullPath, false));
                     Directory.CreateDirectory(targetDirPath);
 
-                    if (Data.Settings.EnableLog && !Data.RuntimeSettings.IsLogPaused)
+                    if (!Data.RuntimeSettings.IsLogPaused)
                         Data.CommandLog.Add(new($"@Windows: mkdir {targetDirPath}"));
                 }
             }
 
             ParallelOptions options = new()
             {
-                MaxDegreeOfParallelism = Data.Settings.AllowMultiOp ? -1 : 1
+                // Tree-selection backup mode prioritizes correctness/stability over speed.
+                MaxDegreeOfParallelism = (Data.RuntimeSettings.IsTreeSelectionActive || !Data.Settings.AllowMultiOp) ? 1 : -1
             };
             bool useV2 = Device.AndroidVersion >= 11;
 
@@ -139,7 +140,7 @@ public class FileSyncOperation : FileOperation
 
                 if (OperationName is OperationType.Push)
                 {
-                    if (Data.Settings.EnableLog && !Data.RuntimeSettings.IsLogPaused)
+                    if (!Data.RuntimeSettings.IsLogPaused)
                         Data.CommandLog.Add(new($"@AdvancedSharpAdbClient: push {item.FullPath} -> {targetPath}"));
 
                     var lastWriteTime = item.DateModified ?? DateTime.Now;
@@ -157,17 +158,57 @@ public class FileSyncOperation : FileOperation
                 }
                 else
                 {
-                    if (Data.Settings.EnableLog && !Data.RuntimeSettings.IsLogPaused)
-                        Data.CommandLog.Add(new($"@AdvancedSharpAdbClient: pull {item.FullPath} -> {targetPath}"));
-
                     try
                     {
-                        // target = [Windows parent folder]\[relative path from Android parent folder to current item]
-                        using var stream = new FileStream(targetPath, FileMode.Create, FileAccess.Write, FileShare.Read);
-                        service.Pull(item.FullPath, stream, SyncProgressCallback, useV2, in isCanceled);
+                        // Prefer native adb pull -a to preserve host file timestamps when possible.
+                        // Falls back to library stream pull if -a is unsupported by the current adb path.
+                        var exitCode = ADBService.ExecuteDeviceAdbCommand(
+                            Device.ID,
+                            "pull",
+                            out _,
+                            out string pullError,
+                            cancelTokenSource.Token,
+                            "-a",
+                            ADBService.EscapeAdbString(item.FullPath),
+                            ADBService.EscapeAdbString(targetPath));
 
-                        if (item.DateModified is not null)
-                            File.SetLastWriteTime(targetPath, item.DateModified.Value);
+                        if (exitCode != 0)
+                        {
+                            // Unknown option / pull failure -> fallback to SyncService pull
+                            if (pullError?.IndexOf("unknown option", StringComparison.OrdinalIgnoreCase) >= 0
+                                || pullError?.IndexOf("invalid option", StringComparison.OrdinalIgnoreCase) >= 0)
+                            {
+                                if (!Data.RuntimeSettings.IsLogPaused)
+                                    Data.CommandLog.Add(new($"@AdvancedSharpAdbClient: pull {item.FullPath} -> {targetPath}"));
+
+                                // target = [Windows parent folder]\[relative path from Android parent folder to current item]
+                                using var stream = new FileStream(targetPath, FileMode.Create, FileAccess.Write, FileShare.Read);
+                                service.Pull(item.FullPath, stream, SyncProgressCallback, useV2, in isCanceled);
+
+                                if (item.DateModified is not null)
+                                {
+                                    var dt = item.DateModified.Value;
+                                    File.SetLastWriteTime(targetPath, dt);
+                                    // Android pull does not provide true Windows creation/access metadata,
+                                    // so align them to modified time for closer backup parity.
+                                    File.SetCreationTime(targetPath, dt);
+                                    File.SetLastAccessTime(targetPath, dt);
+                                }
+                            }
+                            else
+                            {
+                                throw new Exception(string.IsNullOrWhiteSpace(pullError) ? "adb pull failed" : pullError);
+                            }
+                        }
+                        else
+                        {
+                            if (!Data.RuntimeSettings.IsLogPaused)
+                                Data.CommandLog.Add(new($"@adb: pull -a {item.FullPath} -> {targetPath}"));
+
+                            // adb pull -a does not report per-file progress through SyncService callbacks.
+                            // Mark file as completed to keep operation counters accurate.
+                            AddUpdates(new AdbSyncProgressInfo(item.FullPath, null, 100, item.Size));
+                        }
                     }
                     catch (Exception e)
                     {

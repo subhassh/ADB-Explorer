@@ -63,9 +63,16 @@ public partial class App : Application
             }
             
 #if !DEPLOY
-            if (!File.Exists(ADB_Explorer.Properties.AppGlobal.DragDropLogPath))
+            var dragDropLogPath = Environment.ExpandEnvironmentVariables(ADB_Explorer.Properties.AppGlobal.DragDropLogPath);
+            var dragDropLogDir = Path.GetDirectoryName(dragDropLogPath);
+            if (!string.IsNullOrWhiteSpace(dragDropLogDir))
             {
-                File.WriteAllText(ADB_Explorer.Properties.AppGlobal.DragDropLogPath, "");
+                Directory.CreateDirectory(dragDropLogDir);
+            }
+
+            if (!File.Exists(dragDropLogPath))
+            {
+                File.WriteAllText(dragDropLogPath, "");
             }
 #endif
 

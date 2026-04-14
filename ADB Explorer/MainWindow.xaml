@@ -138,6 +138,11 @@
                 MouseDown="GridBackgroundBlock_MouseDown"
                 Style="{StaticResource ExplorerViewBackgroundStyle}">
                 <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition />
+                        <ColumnDefinition Width="6" />
+                        <ColumnDefinition Width="340" MinWidth="220" />
+                    </Grid.ColumnDefinitions>
                     <ScrollViewer Style="{StaticResource DriveViewScrollViewerStyle}">
                         <StackPanel>
                             <Expander
@@ -396,7 +401,15 @@
                             Cursor="SizeWE"
                             FocusVisualStyle="{x:Null}" />
                     </Grid>
-                    <Grid Style="{StaticResource LogGridStyle}">
+                    <GridSplitter
+                        Grid.Column="1"
+                        HorizontalAlignment="Stretch"
+                        VerticalAlignment="Stretch"
+                        ResizeDirection="Columns"
+                        ResizeBehavior="PreviousAndNext"
+                        Background="#666666"
+                        FocusVisualStyle="{x:Null}" />
+                    <Grid Grid.Column="2" Style="{StaticResource LogGridStyle}" Visibility="Visible">
                         <TextBox x:Name="LogTextBox" Style="{StaticResource LogTextBoxStyle}" />
                         <Menu
                             x:Name="LogControlsPanel"
@@ -557,6 +570,12 @@
                             Style="{StaticResource TotalSizeStyle}"
                             Text="{Binding ElementName=MainWin, Path=SelectedFilesTotalSize}" />
                     </StackPanel>
+                    <Button
+                        Margin="8,0,0,0"
+                        Padding="8,2"
+                        Click="TreeSelectionButton_Click"
+                        Content="Tree Select"
+                        ToolTip="Open tree view with tri-state checkbox selection" />
                 </StackPanel>
                 <StackPanel
                     Grid.Column="2"
@@ -583,6 +602,7 @@
                     <Menu Margin="6,0,-5,0" Style="{StaticResource LogToggleStyle}" />
                 </StackPanel>
             </Grid>
+
         </Grid>
         <ui:SplitView
             x:Name="DevicesSplitView"

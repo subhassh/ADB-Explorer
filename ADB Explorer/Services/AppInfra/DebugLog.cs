@@ -7,10 +7,24 @@ public static class DebugLog
     public static void PrintLine(string message)
     {
         mutex.WaitOne();
-        
-        if (!string.IsNullOrEmpty(Properties.AppGlobal.DragDropLogPath))
-            File.AppendAllText(Properties.AppGlobal.DragDropLogPath, $"{DateTime.Now:HH:mm:ss:fff} | {message}\n");
 
-        mutex.ReleaseMutex();
+        try
+        {
+            if (string.IsNullOrEmpty(Properties.AppGlobal.DragDropLogPath))
+                return;
+
+            var logPath = Environment.ExpandEnvironmentVariables(Properties.AppGlobal.DragDropLogPath);
+            var logDir = Path.GetDirectoryName(logPath);
+            if (!string.IsNullOrWhiteSpace(logDir))
+            {
+                Directory.CreateDirectory(logDir);
+            }
+
+            File.AppendAllText(logPath, $"{DateTime.Now:HH:mm:ss:fff} | {message}\n");
+        }
+        finally
+        {
+            mutex.ReleaseMutex();
+        }
     }
 }
