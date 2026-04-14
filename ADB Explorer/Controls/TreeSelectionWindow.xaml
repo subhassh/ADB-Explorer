@@ -17,18 +17,20 @@
         <TextBlock Grid.Row="0" Margin="0,0,0,8" Text="Check folders/files. Parent checkbox supports full and partial subtree selection." TextWrapping="Wrap" />
 
         <Border Grid.Row="1" BorderBrush="#DDD" BorderThickness="1">
-            <ScrollViewer VerticalScrollBarVisibility="Auto">
-                <TreeView x:Name="SelectionTree" SelectedItemChanged="SelectionTree_SelectedItemChanged">
-                    <TreeView.Resources>
-                        <HierarchicalDataTemplate DataType="{x:Type viewModels:TreeSelectionNode}" ItemsSource="{Binding Children}">
-                            <StackPanel Orientation="Horizontal">
-                                <CheckBox IsThreeState="True" IsChecked="{Binding IsChecked, Mode=TwoWay}" VerticalAlignment="Center" />
-                                <TextBlock Margin="6,0,0,0" Text="{Binding Name}" VerticalAlignment="Center" />
-                            </StackPanel>
-                        </HierarchicalDataTemplate>
-                    </TreeView.Resources>
-                </TreeView>
-            </ScrollViewer>
+            <TreeView
+                x:Name="SelectionTree"
+                ScrollViewer.VerticalScrollBarVisibility="Auto"
+                ScrollViewer.CanContentScroll="True"
+                SelectedItemChanged="SelectionTree_SelectedItemChanged">
+                <TreeView.Resources>
+                    <HierarchicalDataTemplate DataType="{x:Type viewModels:TreeSelectionNode}" ItemsSource="{Binding Children}">
+                        <StackPanel Orientation="Horizontal">
+                            <CheckBox IsThreeState="True" IsChecked="{Binding IsChecked, Mode=TwoWay}" VerticalAlignment="Center" />
+                            <TextBlock Margin="6,0,0,0" Text="{Binding Name}" VerticalAlignment="Center" />
+                        </StackPanel>
+                    </HierarchicalDataTemplate>
+                </TreeView.Resources>
+            </TreeView>
         </Border>
 
         <StackPanel Grid.Row="2" Margin="0,10,0,0" Orientation="Horizontal" HorizontalAlignment="Right">

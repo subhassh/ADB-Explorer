@@ -11,6 +11,14 @@ public class TreeSelectionNode : ViewModelBase
         get => isChecked;
         set
         {
+            // Prevent manual forcing of an indeterminate value from UI toggles.
+            // Indeterminate should reflect child state only.
+            if (!isUpdatingChildren && value is null)
+            {
+                UpdateFromChildren();
+                return;
+            }
+
             if (!Set(ref isChecked, value))
                 return;
 
