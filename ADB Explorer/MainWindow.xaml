@@ -80,6 +80,7 @@
                 <RowDefinition Height="Auto" />
                 <RowDefinition />
                 <RowDefinition Height="Auto" />
+                <RowDefinition Height="4" />
                 <RowDefinition Height="180" MinHeight="80" />
             </Grid.RowDefinitions>
             <Grid Margin="0,0,7,0">
@@ -593,12 +594,13 @@
             <GridSplitter
                 Grid.Row="4"
                 Height="4"
-                VerticalAlignment="Top"
+                VerticalAlignment="Stretch"
                 HorizontalAlignment="Stretch"
                 ResizeDirection="Rows"
+                ResizeBehavior="PreviousAndNext"
                 Background="#666666" />
 
-            <Border Grid.Row="4" Margin="6,6,6,4" BorderThickness="1" BorderBrush="#DDDDDD" Background="#111111">
+            <Border Grid.Row="5" Margin="6,0,6,4" BorderThickness="1" BorderBrush="#DDDDDD" Background="#111111">
                 <Grid>
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto" />

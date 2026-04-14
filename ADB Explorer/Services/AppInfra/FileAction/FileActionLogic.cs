@@ -1158,7 +1158,8 @@ internal static class FileActionLogic
                 var item = selected.GetSyncFile();
 
                 // Preserve subtree path from current Android location into Windows target.
-                // We pass a destination base folder, then FileSyncOperation appends selected item's own name/content.
+                // Directories use destination base (operation appends selected folder name).
+                // Files use exact destination file path.
                 var relativeParent = string.Equals(selected.ParentPath, Data.CurrentPath, StringComparison.Ordinal)
                     ? ""
                     : FileHelper.ExtractRelativePath(selected.ParentPath, Data.CurrentPath);
@@ -1167,10 +1168,25 @@ internal static class FileActionLogic
                     ? path.ParsingName
                     : FileHelper.ConcatPaths(path.ParsingName, relativeParent, '\\');
 
-                if (!Directory.Exists(destinationBase))
-                    Directory.CreateDirectory(destinationBase);
+                SyncFile target;
+                if (selected.IsDirectory)
+                {
+                    if (!Directory.Exists(destinationBase))
+                        Directory.CreateDirectory(destinationBase);
 
-                var target = new SyncFile(destinationBase, FileType.Folder) { PathType = FilePathType.Windows };
+                    target = new SyncFile(destinationBase, FileType.Folder) { PathType = FilePathType.Windows };
+                }
+                else
+                {
+                    var relativeFile = FileHelper.ExtractRelativePath(selected.FullPath, Data.CurrentPath);
+                    var destinationFile = FileHelper.ConcatPaths(path.ParsingName, relativeFile, '\\');
+                    var destinationDir = Path.GetDirectoryName(destinationFile);
+
+                    if (!string.IsNullOrEmpty(destinationDir) && !Directory.Exists(destinationDir))
+                        Directory.CreateDirectory(destinationDir);
+
+                    target = new SyncFile(destinationFile, FileType.File) { PathType = FilePathType.Windows };
+                }
 
                 var fileOp = FileSyncOperation.PullFile(item, target, Data.CurrentADBDevice, App.Current.Dispatcher);
 
