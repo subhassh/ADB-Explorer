@@ -873,11 +873,32 @@ internal static class FileActionLogic
             .Distinct(StringComparer.InvariantCultureIgnoreCase)
             .Count() != Data.SelectedFiles.Count();
 
-        Data.FileActions.PullEnabled = !Data.FileActions.IsRecycleBin
-                                       && Data.SelectedFiles.AnyAll(f => f.Type is not FileType.BrokenLink)
-                                       && Data.FileActions.IsRegularItem
-                                       && !Data.FileActions.IsSelectionIllegalOnWindows
-                                       && !Data.FileActions.IsSelectionConflictingOnFuse;
+        bool pullBlockedRecycle = Data.FileActions.IsRecycleBin;
+        bool pullBlockedBrokenLink = !Data.SelectedFiles.AnyAll(f => f.Type is not FileType.BrokenLink);
+        bool pullBlockedType = !Data.FileActions.IsRegularItem;
+        bool pullBlockedIllegalWindows = Data.FileActions.IsSelectionIllegalOnWindows;
+        bool pullBlockedFuseConflict = Data.FileActions.IsSelectionConflictingOnFuse;
+
+        Data.FileActions.PullEnabled = !pullBlockedRecycle
+                                       && !pullBlockedBrokenLink
+                                       && !pullBlockedType
+                                       && !pullBlockedIllegalWindows
+                                       && !pullBlockedFuseConflict;
+
+        if (!Data.FileActions.PullEnabled)
+        {
+            Data.FileActions.PullDescription.Value = pullBlockedRecycle
+                ? "Pull is disabled in recycle bin"
+                : pullBlockedBrokenLink
+                    ? "Pull is disabled: selection contains a broken link"
+                    : pullBlockedType
+                        ? "Pull is disabled: selection contains unsupported item type"
+                        : pullBlockedIllegalWindows
+                            ? "Pull is disabled: one or more names are invalid on Windows"
+                            : pullBlockedFuseConflict
+                                ? "Pull is disabled: selected names conflict on case-insensitive Windows"
+                                : Data.FileActions.PullDescription.Value;
+        }
 
         Data.FileActions.ContextPushEnabled = !Data.FileActions.IsRecycleBin && !Data.FileActions.IsAppDrive && (!Data.SelectedFiles.Any() || (Data.SelectedFiles.Count() == 1 && Data.SelectedFiles.First().IsDirectory));
 
