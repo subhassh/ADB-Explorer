@@ -168,7 +168,14 @@ public class FileSyncOperation : FileOperation
                         service.Pull(item.FullPath, stream, SyncProgressCallback, useV2, in isCanceled);
 
                         if (item.DateModified is not null)
-                            File.SetLastWriteTime(targetPath, item.DateModified.Value);
+                        {
+                            var dt = item.DateModified.Value;
+                            File.SetLastWriteTime(targetPath, dt);
+                            // Android pull does not provide true Windows creation/access metadata,
+                            // so align them to modified time for closer backup parity.
+                            File.SetCreationTime(targetPath, dt);
+                            File.SetLastAccessTime(targetPath, dt);
+                        }
                     }
                     catch (Exception e)
                     {

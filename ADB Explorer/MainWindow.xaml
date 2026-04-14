@@ -557,13 +557,13 @@
                             Margin="6,4,0,4"
                             Style="{StaticResource TotalSizeStyle}"
                             Text="{Binding ElementName=MainWin, Path=SelectedFilesTotalSize}" />
-                        <Button
-                            Margin="8,0,0,0"
-                            Padding="8,2"
-                            Click="TreeSelectionButton_Click"
-                            Content="Tree Select"
-                            ToolTip="Open tree view with tri-state checkbox selection" />
                     </StackPanel>
+                    <Button
+                        Margin="8,0,0,0"
+                        Padding="8,2"
+                        Click="TreeSelectionButton_Click"
+                        Content="Tree Select"
+                        ToolTip="Open tree view with tri-state checkbox selection" />
                 </StackPanel>
                 <StackPanel
                     Grid.Column="2"
@@ -597,7 +597,7 @@
                 VerticalAlignment="Stretch"
                 HorizontalAlignment="Stretch"
                 ResizeDirection="Rows"
-                ResizeBehavior="PreviousAndNext"
+                ResizeBehavior="CurrentAndNext"
                 Background="#666666" />
 
             <Border Grid.Row="5" Margin="6,0,6,4" BorderThickness="1" BorderBrush="#DDDDDD" Background="#111111">
