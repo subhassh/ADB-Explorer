@@ -140,30 +140,8 @@
                 <Grid>
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition />
-                        <ColumnDefinition>
-                            <ColumnDefinition.Style>
-                                <Style TargetType="ColumnDefinition">
-                                    <Setter Property="Width" Value="6" />
-                                    <Style.Triggers>
-                                        <DataTrigger Binding="{Binding Source={x:Static models:Data.RuntimeSettings}, Path=IsLogOpen}" Value="False">
-                                            <Setter Property="Width" Value="0" />
-                                        </DataTrigger>
-                                    </Style.Triggers>
-                                </Style>
-                            </ColumnDefinition.Style>
-                        </ColumnDefinition>
-                        <ColumnDefinition MinWidth="220">
-                            <ColumnDefinition.Style>
-                                <Style TargetType="ColumnDefinition">
-                                    <Setter Property="Width" Value="340" />
-                                    <Style.Triggers>
-                                        <DataTrigger Binding="{Binding Source={x:Static models:Data.RuntimeSettings}, Path=IsLogOpen}" Value="False">
-                                            <Setter Property="Width" Value="0" />
-                                        </DataTrigger>
-                                    </Style.Triggers>
-                                </Style>
-                            </ColumnDefinition.Style>
-                        </ColumnDefinition>
+                        <ColumnDefinition Width="6" />
+                        <ColumnDefinition Width="340" MinWidth="220" />
                     </Grid.ColumnDefinitions>
                     <ScrollViewer Style="{StaticResource DriveViewScrollViewerStyle}">
                         <StackPanel>
@@ -430,19 +408,8 @@
                         ResizeDirection="Columns"
                         ResizeBehavior="PreviousAndNext"
                         Background="#666666"
-                        FocusVisualStyle="{x:Null}">
-                        <GridSplitter.Style>
-                            <Style TargetType="GridSplitter">
-                                <Setter Property="Visibility" Value="Visible" />
-                                <Style.Triggers>
-                                    <DataTrigger Binding="{Binding Source={x:Static models:Data.RuntimeSettings}, Path=IsLogOpen}" Value="False">
-                                        <Setter Property="Visibility" Value="Collapsed" />
-                                    </DataTrigger>
-                                </Style.Triggers>
-                            </Style>
-                        </GridSplitter.Style>
-                    </GridSplitter>
-                    <Grid Grid.Column="2" Style="{StaticResource LogGridStyle}">
+                        FocusVisualStyle="{x:Null}" />
+                    <Grid Grid.Column="2" Style="{StaticResource LogGridStyle}" Visibility="Visible">
                         <TextBox x:Name="LogTextBox" Style="{StaticResource LogTextBoxStyle}" />
                         <Menu
                             x:Name="LogControlsPanel"
