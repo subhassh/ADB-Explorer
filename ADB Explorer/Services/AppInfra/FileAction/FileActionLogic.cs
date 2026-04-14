@@ -869,7 +869,9 @@ internal static class FileActionLogic
         Data.FileActions.IsSelectionIllegalOnWindows = Data.SelectedFiles.Any() && !FileHelper.FileNameLegal(Data.SelectedFiles, FileHelper.RenameTarget.Windows);
         Data.FileActions.IsSelectionIllegalOnFuse = Data.SelectedFiles.Any() && !FileHelper.FileNameLegal(Data.SelectedFiles, FileHelper.RenameTarget.FUSE);
         Data.FileActions.IsSelectionIllegalOnWinRoot = Data.SelectedFiles.Any() && !FileHelper.FileNameLegal(Data.SelectedFiles, FileHelper.RenameTarget.WinRoot);
-        Data.FileActions.IsSelectionConflictingOnFuse = Data.SelectedFiles.Select(f => f.FullName)
+        // Conflict checks must use full path context, not only file name.
+        // Different folders can legitimately contain same file names.
+        Data.FileActions.IsSelectionConflictingOnFuse = Data.SelectedFiles.Select(f => f.FullPath)
             .Distinct(StringComparer.InvariantCultureIgnoreCase)
             .Count() != Data.SelectedFiles.Count();
 
