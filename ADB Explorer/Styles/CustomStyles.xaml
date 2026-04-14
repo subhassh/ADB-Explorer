@@ -741,9 +741,13 @@
         TargetType="TextBox">
         <Setter Property="FontFamily" Value="{StaticResource ConsoleFont}" />
         <Setter Property="IsReadOnly" Value="True" />
-        <Setter Property="FontSize" Value="18" />
-        <Setter Property="TextWrapping" Value="Wrap" />
+        <Setter Property="FontSize" Value="13" />
+        <Setter Property="Padding" Value="8,6" />
+        <Setter Property="TextWrapping" Value="NoWrap" />
+        <Setter Property="HorizontalScrollBarVisibility" Value="Auto" />
         <Setter Property="VerticalScrollBarVisibility" Value="Auto" />
+        <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundAltMediumBrush}" />
+        <Setter Property="BorderThickness" Value="0" />
     </Style>
     <Style x:Key="LogGridStyle" TargetType="Grid">
         <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundAltHighBrush}" />
