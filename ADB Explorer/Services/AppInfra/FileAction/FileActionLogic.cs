@@ -1134,10 +1134,16 @@ internal static class FileActionLogic
             }
         }
 
-        var files = await CopyPasteService.MergeFiles(pullItems.Select(f => f.FullPath), path.ParsingName);
-        if (files.Count() < pullItems.Count())
+        // Conflict checks are reliable for top-level selections, but not for nested tree selections.
+        // For nested selections, preserve all selected items and let transfer operations handle target paths.
+        var hasNestedSelection = pullItems.Any(f => !string.Equals(f.ParentPath, Data.CurrentPath, StringComparison.Ordinal));
+        if (!hasNestedSelection)
         {
-            pullItems = pullItems.Where(f => files.Contains(f.FullPath));
+            var files = await CopyPasteService.MergeFiles(pullItems.Select(f => f.FullPath), path.ParsingName);
+            if (files.Count() < pullItems.Count())
+            {
+                pullItems = pullItems.Where(f => files.Contains(f.FullPath));
+            }
         }
 
         await Task.Run(() =>
@@ -1152,13 +1158,19 @@ internal static class FileActionLogic
                 var item = selected.GetSyncFile();
 
                 // Preserve subtree path from current Android location into Windows target.
-                // Example: /storage/emulated/0/Documents/a.txt -> <target>/Documents/a.txt
-                var relative = FileHelper.ExtractRelativePath(selected.FullPath, Data.CurrentPath);
-                var targetPath = FileHelper.ConcatPaths(path.ParsingName, relative, '\\');
+                // We pass a destination base folder, then FileSyncOperation appends selected item's own name/content.
+                var relativeParent = string.Equals(selected.ParentPath, Data.CurrentPath, StringComparison.Ordinal)
+                    ? ""
+                    : FileHelper.ExtractRelativePath(selected.ParentPath, Data.CurrentPath);
 
-                var target = new SyncFile(item);
-                target.UpdatePath(targetPath);
-                target.PathType = FilePathType.Windows;
+                var destinationBase = string.IsNullOrEmpty(relativeParent)
+                    ? path.ParsingName
+                    : FileHelper.ConcatPaths(path.ParsingName, relativeParent, '\\');
+
+                if (!Directory.Exists(destinationBase))
+                    Directory.CreateDirectory(destinationBase);
+
+                var target = new SyncFile(destinationBase, FileType.Folder) { PathType = FilePathType.Windows };
 
                 var fileOp = FileSyncOperation.PullFile(item, target, Data.CurrentADBDevice, App.Current.Dispatcher);
 

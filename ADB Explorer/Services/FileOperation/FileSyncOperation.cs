@@ -115,7 +115,7 @@ public class FileSyncOperation : FileOperation
                     var targetDirPath = FileHelper.ConcatPaths(TargetPath, FileHelper.ExtractRelativePath(dir.FullPath, FilePath.FullPath, false));
                     Directory.CreateDirectory(targetDirPath);
 
-                    if (Data.Settings.EnableLog && !Data.RuntimeSettings.IsLogPaused)
+                    if (!Data.RuntimeSettings.IsLogPaused)
                         Data.CommandLog.Add(new($"@Windows: mkdir {targetDirPath}"));
                 }
             }
@@ -139,7 +139,7 @@ public class FileSyncOperation : FileOperation
 
                 if (OperationName is OperationType.Push)
                 {
-                    if (Data.Settings.EnableLog && !Data.RuntimeSettings.IsLogPaused)
+                    if (!Data.RuntimeSettings.IsLogPaused)
                         Data.CommandLog.Add(new($"@AdvancedSharpAdbClient: push {item.FullPath} -> {targetPath}"));
 
                     var lastWriteTime = item.DateModified ?? DateTime.Now;
@@ -157,7 +157,7 @@ public class FileSyncOperation : FileOperation
                 }
                 else
                 {
-                    if (Data.Settings.EnableLog && !Data.RuntimeSettings.IsLogPaused)
+                    if (!Data.RuntimeSettings.IsLogPaused)
                         Data.CommandLog.Add(new($"@AdvancedSharpAdbClient: pull {item.FullPath} -> {targetPath}"));
 
                     try
