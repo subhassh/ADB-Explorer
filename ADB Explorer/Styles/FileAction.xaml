@@ -149,6 +149,7 @@
         <Setter Property="Margin" Value="{Binding RelativeSource={RelativeSource Mode=Self}, Converter={StaticResource MenuItemConverter}, ConverterParameter=Margin}" />
         <Setter Property="MinWidth" Value="40" />
         <Setter Property="ToolTip" Value="{Binding Tooltip}" />
+        <Setter Property="ToolTipService.ShowOnDisabled" Value="True" />
         <Setter Property="ToolTip.FlowDirection" Value="LeftToRight" />
         <Setter Property="helpers:StyleHelper.ContentAnimation" Value="{Binding Animation}" />
         <Setter Property="helpers:StyleHelper.AnimateOnClick" Value="{Binding AnimateOnClick}" />
